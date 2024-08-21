@@ -1,0 +1,32 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    color: white;
+}
+
+.popup_window{
+    width: 350px;
+    height: 400px;
+    background-color: #111;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+
+    flex-direction: column;
+    gap: 2;
+}
+
+.popup_button{
+    width: 100%;
+    padding: 1.5rem 0;
+    font-size: 2rem;
+    font-weight: 600;
+    outline: none;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+}
+
