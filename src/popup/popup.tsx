@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client"
 import "./popup.css"
-import { OpenIndexedDatabase } from "../utils/indexedDb";
-
 
 const Popup = () => {
 
@@ -11,37 +9,29 @@ const Popup = () => {
     const [lastTopic, setLastTopic] = useState<string | null>(null);
 
     useEffect(() => {
-        chrome.runtime.sendMessage({task: "check_extension_state"}, (response) => {
-            setIsExtensionEnabled(response)            
-        })
-        
-    }, [isExtensionEnabled])
+      chrome.runtime.sendMessage(
+        { task: "check_extension_state" },
+        (response) => {
+          setIsExtensionEnabled(response);
+        }
+      );
 
-
-    useEffect(() => {
-         chrome.runtime.sendMessage({task: "get_combo_box_topic"}, (response) => {
-            console.log(response, "from useeffect2 response");
-            if("last_topic" in response){
-                setLastTopic(response.last_topic)
-            }else{
-                setLastTopic(null)
-            }
-        })
-        
-    }, [])
-
-    useEffect(() => {
-        chrome.runtime.sendMessage({task: "test_message"}, (response) => {
-            console.log(response, "current db state");
-        })
-    },[lastTopic])
+      chrome.runtime.sendMessage(
+        { task: "get_combo_box_topic" },
+        (response) => {
+          if ("last_topic" in response) {
+            setLastTopic(response.last_topic);
+          } else {
+            setLastTopic(null);
+          }
+        }
+      );
+    }, []);
 
     const handleUpdateExtensionState = async () => {
         chrome.runtime.sendMessage({task: "update_extension_state", current_state: isExtensionEnabled}, (response) => {
             if(response.success === true){
-                setIsExtensionEnabled(response.newState)
-                console.log(response.newState);
-                
+                setIsExtensionEnabled(response.newState)                
             }
         })
         
@@ -50,21 +40,17 @@ const Popup = () => {
     const handleAddNewTopic = async () => {
 
         if(!(addTopicInputValue === "" || addTopicInputValue === null)){
-            chrome.runtime.sendMessage({task: "add_new_topic", topic: addTopicInputValue}, (response) => {                
+            chrome.runtime.sendMessage({task: "add_new_topic", topic: addTopicInputValue}, async (response) => {                
                 setLastTopic(response.result.topic)
-
+                setAddTopicInputValue("")
             })
+
+            
+            
+
         }
         
     }
-
-    // if(true){
-    //     return (
-    //         <div className="popup_window">
-    //             <span>Loading...</span>
-    //         </div>
-    //     )
-    // }
 
     return(
         <div className="popup_window">
@@ -98,7 +84,6 @@ const Popup = () => {
 
             </div>
 
-            {/* <button className="crud-btn" onClick={deleteDb}>Index Db</button> */}
         </div>
            }
 

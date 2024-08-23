@@ -38,22 +38,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if(message.task === "update_extension_state") {
     (async() => {
         try {
-            console.log(message, "from bg message print");
-            
+
             if(!("current_state" in message)){
                 throw new Error("No Current State is provided to update_extension_state") 
             }
 
             const current_state = message.current_state;
             const newState = !current_state;
+
             chrome.storage.local.set({
                 extension_enabled: newState
             })
+
             sendResponse({success: true, newState: newState})
 
         } catch (error) {
             sendResponse({success: false})
-         console.log(error, "from background.ts - update_extension_state", error);
+            console.log(error, "from background.ts - update_extension_state", error);
         }
     })();
 
@@ -65,8 +66,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     (async () => {
         try {
 
-            console.log("from function get_combo_box_topic background.ts");
-
             const db = await OpenIndexedDatabase();
             const transaction = db.transaction("topic_url_state_db_object_store", "readonly");
             const store = transaction.objectStore("topic_url_state_db_object_store");
@@ -74,8 +73,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const request = store.get("topic_url_state")
 
             request.onsuccess = () => {
-                console.log(request.result, "i am actual request get_combo_box_topic");
-                
                 sendResponse(request.result)
             }
             
@@ -92,8 +89,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.task === "add_new_topic") {
     (async () => {
       try {
-        console.log("from function add_new_topic background.ts");
-  
+
         if (!("topic" in message)) {
           throw new Error("Please provide a topic.");
         }
@@ -107,7 +103,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         const {id,topic, last_topic, current_url} = await getDataFromIndexedDb()
 
-        await UpdateDataIndexedDb({id, topic, new_topic: message.topic, current_url: tabs[0].url})
+        await UpdateDataIndexedDb({id, new_topic: message.topic, current_url: tabs[0].url})
 
         const result = await getDataFromIndexedDb();
         sendResponse({success: true, result})
@@ -144,16 +140,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
     if(changeInfo.status === "complete" && tab.active && tab.url){
+        console.log("hahaha");
+        
 
-        const { extension_enabled } = await chrome.storage.local.get("extension_enabled");
+        try {
+            const { extension_enabled } = await chrome.storage.local.get("extension_enabled");
 
-        // if(extension_enabled && shouldStoreUrl(tab.url)){
-        //     console.log("stroing in db", tab.url);
-            
-        // }
+        const currentState = await getDataFromIndexedDb();
+        // console.log(currentState,"current state - before updating");
+        
+        const isExtensionFirstTime = (currentState?.last_topic === undefined && currentState?.topic === undefined)
+        // console.log(isExtensionFirstTime, "isExtensionFirstTime");
+        
 
-        if(extension_enabled){
+        if(extension_enabled && !isExtensionFirstTime){
+
             await UpdateUrlAndStateInDb(tab.url)
+            const data = await getDataFromIndexedDb()
+            // console.log(data, "current db state, bg auto tab funciton");
+            
+        }
+        } catch (error) {
+         console.log(error, "from background.ts auto update tabs, tabs listener");
+            
         }
 
     }

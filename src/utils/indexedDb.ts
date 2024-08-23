@@ -63,24 +63,24 @@ export async function UpdateUrlAndStateInDb(url:string) {
     const db = await OpenIndexedDatabase();
 
     return new Promise<void>((resolve, reject) => {
+
         const transaction = db.transaction("topic_url_state_db_object_store", "readwrite");
         const store = transaction.objectStore("topic_url_state_db_object_store");
 
         const getRequest = store.get("topic_url_state");
-        
 
         getRequest.onsuccess = () => {
-            // const topic = getRequest.result.topic;
-            const lastTopic = getRequest.result.last_topic || "";
 
-            const putRequest = store.put({id: "topic_url_state", current_url:url, topic: lastTopic});
+            const lastTopic = getRequest.result.last_topic;
+
+            const putRequest = store.put({...getRequest.result, current_url:url, topic: lastTopic});
 
             putRequest.onsuccess = () => {
                 resolve()
             }
     
             putRequest.onerror = () => {
-                reject()
+                reject("put request error, UpdateUrlAndStateInDb")
             }
         }
 
@@ -127,7 +127,7 @@ export async function getDataFromIndexedDb():Promise<any>{
 }
 
 
-export async function UpdateDataIndexedDb({id, topic, new_topic, current_url}:{id:string, topic:string, new_topic:string, current_url:string}) {
+export async function UpdateDataIndexedDb({id, new_topic, current_url}:{id:string, new_topic:string, current_url:string}) {
 
     const db = await OpenIndexedDatabase();
 
@@ -138,7 +138,7 @@ export async function UpdateDataIndexedDb({id, topic, new_topic, current_url}:{i
         const putRequest = store.put({
             id,
             current_url,
-            last_topic: topic,
+            last_topic: new_topic,
             topic: new_topic
         });
 

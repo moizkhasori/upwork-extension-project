@@ -34,6 +34,7 @@ module.exports = {
     entry: {
         popup: "./src/popup/popup.tsx",
         contentScript: "./src/contentScripts/contentScript.ts",
+        // navbar: "./src/contentScripts/Navbar.tsx",
         background: "./src/background/background.ts",
     }, 
     output: {
