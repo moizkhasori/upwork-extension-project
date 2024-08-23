@@ -1,1 +1,0 @@
-(()=>{"use strict";chrome.runtime.sendMessage({task:"check_extension_state"},(e=>{console.log(e)})),console.log(" i am inserted in each tab")})();

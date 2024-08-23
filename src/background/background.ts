@@ -43,7 +43,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 throw new Error("No Current State is provided to update_extension_state") 
             }
 
-            const current_state = message.current_state;
+            // true/false
+            const current_state = message.current_state; 
+
+            if(current_state === true){
+                chrome.storage.local.set({
+                    extension_enabled: false
+
+                })
+            }else{
+
+            }
+
             const newState = !current_state;
 
             chrome.storage.local.set({
@@ -118,22 +129,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if(message.task === "test_message"){
-
-    (async() => {
-        const db = await OpenIndexedDatabase();
-        const transaction = db.transaction("topic_url_state_db_object_store", "readonly");
-            const store = transaction.objectStore("topic_url_state_db_object_store");
-    
-            const getRequest = store.get("topic_url_state");
-    
-            getRequest.onsuccess = () => {sendResponse(getRequest.result)};
-    })();
-
-    return true;
-  }
-
-  
 });
 
 

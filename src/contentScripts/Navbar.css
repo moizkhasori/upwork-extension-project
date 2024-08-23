@@ -1,0 +1,78 @@
+.navbar-container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    color: #ffffff;
+    gap: 3rem;
+}
+
+
+.navbar_button{
+    padding: 1rem 2rem;
+    font-size: 2rem;
+    font-weight: 600;
+    outline: none;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    color: white;
+}
+
+.navbar_input_div{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+}
+
+.navbar_input_div input{
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    outline: none;
+    
+}
+
+.navbar_input_div input::placeholder{
+    color: #444;
+}
+
+.navbar_input_div button{
+    padding: 1rem;
+    font-size: 1.2rem;
+    color: black;
+    background-color: white;
+    font-weight: 600;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.navbar_combobox_div{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.navbar_combobox_div label{
+    font-size: 1.2rem;
+}
+
+.navbar_combobox_div select{
+    padding: 1rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    outline: none;
+    color: black;
+    border-radius: 10px;
+    max-width: 20rem;
+}
+
+.navbar_combobox_div select option{
+    color: black;
+}

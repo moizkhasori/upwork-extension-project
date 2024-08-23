@@ -5,8 +5,8 @@ import "./popup.css"
 const Popup = () => {
 
     const [isExtensionEnabled, setIsExtensionEnabled] = useState<boolean | null>(null);
-    const [addTopicInputValue, setAddTopicInputValue] = useState<string>("")
-    const [lastTopic, setLastTopic] = useState<string | null>(null);
+   
+    
 
     useEffect(() => {
       chrome.runtime.sendMessage(
@@ -15,78 +15,18 @@ const Popup = () => {
           setIsExtensionEnabled(response);
         }
       );
-
-      chrome.runtime.sendMessage(
-        { task: "get_combo_box_topic" },
-        (response) => {
-          if ("last_topic" in response) {
-            setLastTopic(response.last_topic);
-          } else {
-            setLastTopic(null);
-          }
-        }
-      );
     }, []);
 
     const handleUpdateExtensionState = async () => {
-        chrome.runtime.sendMessage({task: "update_extension_state", current_state: isExtensionEnabled}, (response) => {
-            if(response.success === true){
-                setIsExtensionEnabled(response.newState)                
-            }
-        })
-        
+        chrome.storage.local.set({extension_enabled: !isExtensionEnabled})
+        setIsExtensionEnabled(!isExtensionEnabled)
     }
 
-    const handleAddNewTopic = async () => {
-
-        if(!(addTopicInputValue === "" || addTopicInputValue === null)){
-            chrome.runtime.sendMessage({task: "add_new_topic", topic: addTopicInputValue}, async (response) => {                
-                setLastTopic(response.result.topic)
-                setAddTopicInputValue("")
-            })
-
-            
-            
-
-        }
-        
-    }
+   
 
     return(
         <div className="popup_window">
             <button style={{backgroundColor: `${isExtensionEnabled ? "green" : "red"}`}} onClick={handleUpdateExtensionState} className="popup_button">{isExtensionEnabled ? "Enabled" : "Disabled"}</button>
-
-           {
-            isExtensionEnabled &&
-            <div className="popup_optional_render_div">
-
-            <div className="popup_input_div">
-                <input type="text" placeholder="Add Topic" value={addTopicInputValue} onChange={(e) => {setAddTopicInputValue(e.target.value);}} />
-                <button onClick={handleAddNewTopic} >Add</button>
-            </div>
-
-            <div className="popup_combobox_div">
-                <label htmlFor="topic_combobox">Select a Topic:</label>
-
-                {
-                    lastTopic === null
-                    ? (
-                        <select id="topic_combobox">
-                            <option selected disabled>Please Add a Topic!</option>
-                        </select>
-                    )
-                    : (
-                        <select id="topic_combobox">
-                                <option selected value={lastTopic}>{lastTopic}</option>
-                        </select>
-                    )
-                }
-
-            </div>
-
-        </div>
-           }
-
         </div>
     )
 }
