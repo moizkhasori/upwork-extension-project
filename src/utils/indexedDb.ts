@@ -1,3 +1,5 @@
+import { RatingType, StatusType } from "./types";
+
 export const OpenIndexedDatabase = ():Promise<IDBDatabase> => {
 
     return new Promise((resolve,reject) => {
@@ -151,5 +153,155 @@ export async function UpdateDataIndexedDb({id, new_topic, current_url}:{id:strin
         }
 
         
+    })
+}
+
+
+
+export const OpenMilestone3Database = ():Promise<IDBDatabase> => {
+
+    return new Promise((resolve,reject) => {
+
+        const request = indexedDB.open("milestone3db",1);
+
+        request.onupgradeneeded = (event) => {
+
+            const db = (event.target as IDBOpenDBRequest).result;
+
+            if(!db.objectStoreNames.contains("milestone3db_object_store")){
+                const objectStore = db.createObjectStore("milestone3db_object_store", {keyPath:"url"});
+            }
+        }
+
+        request.onsuccess = () => {
+            resolve(request.result)
+        };
+        request.onerror = () => {
+            reject(request.error)
+        }
+
+    })
+}
+
+
+
+export const addUrlDataIntoMilestone3Db = async ({current_url, last_topic, rating = 0, status="none"}:{current_url:string, last_topic:string, rating?:RatingType,status?:StatusType}): Promise<void> => {
+
+    const db = await OpenMilestone3Database();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction('milestone3db_object_store', 'readwrite');
+        const store = transaction.objectStore('milestone3db_object_store');
+
+        const request = store.add({
+            url: current_url,
+            topic: last_topic,
+            rating,
+            status,
+            visited_datetime : new Date().toISOString(),
+        },)
+
+        request.onsuccess = () => {
+            resolve()
+        }
+
+        request.onerror = () => {
+            reject(request.error)
+        }
+
+    })
+}
+
+export const getUrlDataFromMilestone3Db = async (url:string): Promise<any> => {
+
+    const db = await OpenMilestone3Database();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction('milestone3db_object_store', 'readonly');
+        const store = transaction.objectStore('milestone3db_object_store');
+
+        const request = store.get(url)
+
+        request.onsuccess = () => {
+            if (request.result) {
+                resolve(request.result);
+              } else {
+                resolve({})
+              }
+        }
+
+        request.onerror = () => {
+            reject(request.error)
+        }
+
+    })
+}
+
+export const getAllDataFromMilestone3Db = async (): Promise<any[]> => {
+
+    const db = await OpenMilestone3Database();
+
+    return new Promise((resolve, reject) => {
+
+        const transaction = db.transaction('milestone3db_object_store', 'readonly');
+        const store = transaction.objectStore('milestone3db_object_store');
+
+        const request = store.getAll()
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        }
+
+        request.onerror = () => {
+            reject(request.error)
+        }
+
+    })
+}
+
+
+export const updateUrlDataInMilestone3Db = async ({current_url, rating, status, topic}:{current_url:string, rating?:RatingType,status?:StatusType, topic?:string}): Promise<void> => {
+
+    const db = await OpenMilestone3Database();
+
+    return new Promise(async (resolve, reject) => {
+
+        const data = await getUrlDataFromMilestone3Db(current_url);
+
+        if(!("url" in data)){
+            reject("url not found!")
+        }
+
+        const transaction = db.transaction('milestone3db_object_store', 'readwrite');
+        const store = transaction.objectStore('milestone3db_object_store');
+
+        if(status){
+            data.status = status;
+        }
+
+        
+        if(rating){
+            data.rating = rating;
+        }
+
+        if(topic){
+            data.topic = topic;
+        }
+
+        const request = store.put({
+            ...data,
+            visited_datetime: new Date().toISOString()
+        }) 
+
+        request.onsuccess = () => {
+            resolve()
+        }
+
+        request.onerror = () => {
+            reject(request.error)
+        }
+
     })
 }

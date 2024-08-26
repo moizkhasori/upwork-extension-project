@@ -1,4 +1,4 @@
-import { getDataFromIndexedDb, OpenIndexedDatabase, shouldStoreUrl, UpdateDataIndexedDb, UpdateUrlAndStateInDb } from "../utils/indexedDb";
+import { addUrlDataIntoMilestone3Db, getAllDataFromMilestone3Db, getDataFromIndexedDb, getUrlDataFromMilestone3Db, OpenIndexedDatabase, shouldStoreUrl, UpdateDataIndexedDb, UpdateUrlAndStateInDb, updateUrlDataInMilestone3Db } from "../utils/indexedDb";
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
@@ -116,6 +116,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         await UpdateDataIndexedDb({id, new_topic: message.topic, current_url: tabs[0].url})
 
+        const urlExists = await getUrlDataFromMilestone3Db(tabs[0].url);
+        
+        if(!urlExists || Object.keys(urlExists).length === 0){
+          await addUrlDataIntoMilestone3Db({current_url: tabs[0].url, last_topic:message.topic})
+          
+        }else{
+          await updateUrlDataInMilestone3Db({current_url: tabs[0].url, topic: message.topic})
+          
+        }
+
         const result = await getDataFromIndexedDb();
         sendResponse({success: true, result})
   
@@ -129,14 +139,131 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if(message.task === "check_current_url"){
+    (async () => {
+
+      try {
+        const activeTabArray = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = activeTabArray[0];
+
+        const checkInDb = await getUrlDataFromMilestone3Db(activeTab.url!);
+        sendResponse(checkInDb)
+
+      } catch (error) {
+        console.log(error, "from check_current_url bg.ts");
+        sendResponse({success:false, error})
+      }
+
+    })();
+    return true;
+  }
+
+  if(message.task === "get_allurl"){
+    (async () => {
+
+      try {
+
+        const checkInDb = await getAllDataFromMilestone3Db();
+        sendResponse(checkInDb)
+
+      } catch (error) {
+        console.log(error, "from check_current_url bg.ts");
+        sendResponse(error)
+      }
+
+    })();
+    return true;
+  }
+
+  if(message.task === "update_rating"){
+    (async () => {
+      try {
+
+        const result = await getDataFromIndexedDb();
+
+        if(result?.topic === undefined || result?.last_topic === undefined){
+          throw new Error("Please Add a topic first before trying to update rating!")
+        }        
+
+        const activeTabArray = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = activeTabArray[0];
+
+        const checkInDb = await getUrlDataFromMilestone3Db(activeTab.url!);
+
+        if(!("url" in checkInDb)){
+          throw new Error("No Such entry in Db with this url! please try reloading.")
+        }
+
+        if(!("new_rating" in message)){
+          throw new Error("No Rating value Found! Conrtact Developer")
+        }
+
+        await updateUrlDataInMilestone3Db({current_url: activeTab.url!, rating:message.new_rating})
+        const updatedData = await getUrlDataFromMilestone3Db(activeTab.url!);
+        sendResponse({success:true, updated_rating: updatedData.rating})
+
+
+      } catch (error) {
+        if(error instanceof Error){
+          sendResponse({success:false, error: error.message})
+        }else{
+          sendResponse({success:false, error: "unknown error occured  - check dev tool"})
+        }
+      }
+
+
+    })();
+    return true;
+  }
+
+  if(message.task === "update_status"){
+    (async () => {
+      try {
+
+        const result = await getDataFromIndexedDb();
+
+        if(result?.topic === undefined || result?.last_topic === undefined){
+          throw new Error("Please Add a topic first before trying to update status!")
+        } 
+
+        const activeTabArray = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = activeTabArray[0];
+
+        const checkInDb = await getUrlDataFromMilestone3Db(activeTab.url!);
+
+        if(!("url" in checkInDb)){
+          throw new Error("cannot find url in milestone 3 db!")
+        }
+
+        if(!("new_status" in message)){
+          throw new Error("No Status value Found! Conrtact Developer")
+        }
+
+        await updateUrlDataInMilestone3Db({current_url: activeTab.url!, status:message.new_status})
+        const updatedData = await getUrlDataFromMilestone3Db(activeTab.url!);
+        sendResponse({success:true, updated_status: updatedData.status})
+
+
+      } catch (error) {
+        if(error instanceof Error){
+          sendResponse({success:false, error: error.message})
+        }else{
+          sendResponse({success:false, error: "unknown error occured  - check dev tool"})
+        }
+      }
+
+    })();
+    return true;
+  }
+
+  
+
 });
 
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 
-    if(changeInfo.status === "complete" && tab.active && tab.url){
-        console.log("hahaha");
-        
+    if(changeInfo.status === "complete" && tab.active && tab.url){        
 
         try {
             const { extension_enabled } = await chrome.storage.local.get("extension_enabled");
@@ -151,7 +278,13 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         if(extension_enabled && !isExtensionFirstTime){
 
             await UpdateUrlAndStateInDb(tab.url)
-            const data = await getDataFromIndexedDb()
+            const updateCurrentState = await getDataFromIndexedDb();
+            await addUrlDataIntoMilestone3Db({current_url: tab.url, last_topic: updateCurrentState.last_topic})
+            const data = await getAllDataFromMilestone3Db()
+            console.log(data, "background auto");
+            
+
+            // const data = await getDataFromIndexedDb()
             // console.log(data, "current db state, bg auto tab funciton");
             
         }
