@@ -33,15 +33,16 @@ const Navbar = () => {
   const [pageAlreadyVisited, setPageAlreadyVisited] = useState<boolean>(false)
   const [navbarError, setNavbarError] = useState<string | null>(null)
 
-  useEffect(() => {
-    (async () => {
-      chrome.runtime.sendMessage({task:"get_allurl"}, (response) => {
-        console.log(response);
+  // just to see url db state
+  // useEffect(() => {
+  //   (async () => {
+  //     chrome.runtime.sendMessage({task:"get_allurl"}, (response) => {
+  //       console.log(response);
         
-      })
+  //     })
       
-    })();
-  },[rating, status, lastTopic])
+  //   })();
+  // },[rating, status, lastTopic])
 
 
   useEffect(() => {
