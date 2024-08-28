@@ -34,15 +34,15 @@ const Navbar = () => {
   const [navbarError, setNavbarError] = useState<string | null>(null)
 
   // just to see url db state
-  // useEffect(() => {
-  //   (async () => {
-  //     chrome.runtime.sendMessage({task:"get_allurl"}, (response) => {
-  //       console.log(response);
+  useEffect(() => {
+    (async () => {
+      chrome.runtime.sendMessage({task:"get_allurl"}, (response) => {
+        console.log(response);
         
-  //     })
+      })
       
-  //   })();
-  // },[rating, status, lastTopic])
+    })();
+  },[rating, status, lastTopic])
 
 
   useEffect(() => {
@@ -116,13 +116,23 @@ const Navbar = () => {
     try {
 
       const newValue = event.target.value as StatusType;
-
+      const lastButton = await chrome.storage.local.get("last_button_pressed")
       chrome.runtime.sendMessage({task:"update_status", new_status: newValue}, (response) => {
         if(response.success === false){
           setNavbarError(response.error)
         }
        else{
         setStatus(response.updated_status)
+        
+        if(response.updated_status === "ignore" || response.updated_status === "done"){
+          
+          if(lastButton.last_button_pressed !== "previous"){
+            chrome.runtime.sendMessage({task:"next_button_pressed"})
+          }else{
+            chrome.runtime.sendMessage({task:"previous_button_pressed"})
+
+          }
+        }
        }
         
       })
@@ -153,6 +163,45 @@ const Navbar = () => {
   const handleDisableExtension = async () => {
     chrome.storage.local.set({extension_enabled: false})
   };
+
+  const handlePreviousButton = async () => {
+    chrome.runtime.sendMessage({task: "previous_button_pressed"}, (response) => {
+      if(response.success === false){
+        setNavbarError(response.message)
+      }else{
+        console.log(response, "i am response previous button pressed in navbar");
+        
+      }
+      
+    })
+    
+  }
+
+  const handleCurrentButton = async () => {
+    chrome.runtime.sendMessage({task: "current_button_pressed"}, (response) => {
+      if(response.success === false){
+        setNavbarError(response.message)
+      }else{
+        console.log(response, "i am response current button pressed in navbar");
+        
+      }
+      
+    })
+    
+  }
+
+  const handleNextButton = async () => {
+    chrome.runtime.sendMessage({task: "next_button_pressed"}, (response) => {
+      if(response.success === false){
+        setNavbarError(response.message)
+      }else{
+        console.log(response, "i am response next button pressed in navbar");
+        
+      }
+      
+    })
+    
+  }
 
   return (
    <div className="fulldiv">
@@ -214,6 +263,12 @@ const Navbar = () => {
           ))}
 
         </select>
+      </div>
+
+      <div className="threebuttondiv">
+        <button onClick={handlePreviousButton}>Previous</button>
+        <button onClick={handleCurrentButton}>Current</button>
+        <button onClick={handleNextButton}>Next</button>
       </div>
 
     </div>

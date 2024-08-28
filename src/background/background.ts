@@ -1,11 +1,14 @@
 import { addUrlDataIntoMilestone3Db, getAllDataFromMilestone3Db, getDataFromIndexedDb, getUrlDataFromMilestone3Db, OpenIndexedDatabase, shouldStoreUrl, UpdateDataIndexedDb, UpdateUrlAndStateInDb, updateUrlDataInMilestone3Db } from "../utils/indexedDb";
+import { findNextMatch, findPreviousMatch } from "../utils/utils";
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     console.log("Extension Installed Successfully - Upwork Extension");
 
     chrome.storage.local.set({
-        extension_enabled: false
+        extension_enabled: false,
+        initialSearchIndexNext: -1,
+        initialSearchIndexPrevious: 0
     })
     
   }
@@ -255,6 +258,140 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     })();
     return true;
   }
+
+  if(message.task === "current_button_pressed"){
+
+    (async() => {
+      
+      await chrome.storage.local.set({last_button_pressed: "next"})
+      const data = await getDataFromIndexedDb()
+      
+      
+      // if current_url exists in state
+      if(data?.current_url !== undefined){
+
+        const urlData = await getUrlDataFromMilestone3Db(data.current_url);
+
+        // not exists
+        if(Object.keys(urlData).length === 0){
+          sendResponse({success:false, message: "state.url not found in url.db - try realoading or contact developer!"})
+          return;
+        }
+
+        // exists
+        const allTabs = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = allTabs[0];
+        chrome.tabs.update(activeTab.id!, {url: urlData.url});
+        await UpdateDataIndexedDb({id:"topic_url_state", current_url:urlData.url, new_topic:urlData.topic})
+      }
+      // if current_url does not exists in state
+      else{
+        sendResponse({success:false, message:"current_url is undefined in state - please add a topic first! or contact developer"})
+      }
+
+    })();
+
+    return true;
+  }
+
+  if(message.task === "next_button_pressed"){
+
+    (async() => {
+      
+      await chrome.storage.local.set({last_button_pressed: "next"})
+      const data = await getDataFromIndexedDb()
+      
+      // if current_url exists in state
+      if(data?.current_url !== undefined){
+
+        const urlData = await getUrlDataFromMilestone3Db(data.current_url);
+
+        // not exists
+        if(Object.keys(urlData).length === 0){
+          sendResponse({success:false, message: "state.url not found in url.db - try realoading or contact developer!"})
+          return;
+        }
+        
+        const allUrlsFromMilestone3Db = await getAllDataFromMilestone3Db();              
+
+        const initialSearchIndexNext = await chrome.storage.local.get("initialSearchIndexNext")        
+
+        const nextMatch = findNextMatch({lastIndex: initialSearchIndexNext.initialSearchIndexNext, AllUrlArray:allUrlsFromMilestone3Db, present_url: urlData.url, topic: data.topic!})
+        await chrome.storage.local.set({"initialSearchIndexNext": nextMatch.newIndex})
+        
+
+        // no next url exists
+        if(nextMatch.nextUrl === undefined){
+          sendResponse({success:false, message: "no next url is found!"})
+          return;
+        }
+
+        // next url exists
+        await UpdateDataIndexedDb({id:"topic_url_state", current_url:urlData.url, new_topic:urlData.topic})        
+        const allTabs = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = allTabs[0];
+        chrome.tabs.update(activeTab.id!, {url: nextMatch.nextUrl.url});
+      }
+      // if current_url does not exists in state
+      else{
+        sendResponse({success:false, message:"current_url is undefined in state - please add a topic first! or contact developer"})
+      }
+
+    })();
+
+    return true;
+  }
+
+  if(message.task === "previous_button_pressed"){
+
+    (async() => {
+      
+      await chrome.storage.local.set({last_button_pressed: "previous"})
+      const data = await getDataFromIndexedDb()
+      
+      // if current_url exists in state
+      if(data?.current_url !== undefined){
+
+        const urlData = await getUrlDataFromMilestone3Db(data.current_url);
+
+        // not exists
+        if(Object.keys(urlData).length === 0){
+          sendResponse({success:false, message: "state.url not found in url.db - try realoading or contact developer!"})
+          return;
+        }
+        
+        const allUrlsFromMilestone3Db = await getAllDataFromMilestone3Db(); 
+        console.log(allUrlsFromMilestone3Db, "allUrlsFromMilestone3Db");
+                     
+
+        const initialSearchIndexPrevious = await chrome.storage.local.get("initialSearchIndexPrevious")        
+
+        const previousMatch = findPreviousMatch({lastIndex: initialSearchIndexPrevious.initialSearchIndexPrevious, AllUrlArray:allUrlsFromMilestone3Db, present_url: urlData.url, topic: data.topic!})
+        await chrome.storage.local.set({"initialSearchIndexPrevious": previousMatch.newIndex})
+        
+
+        // no next url exists
+        if(previousMatch.previousUrl === undefined){
+          sendResponse({success:false, message: "no previous url is found!"})
+          return;
+        }
+
+        // next url exists
+        await UpdateDataIndexedDb({id:"topic_url_state", current_url:urlData.url, new_topic:urlData.topic})        
+        const allTabs = await chrome.tabs.query({active:true, currentWindow:true});
+        const activeTab = allTabs[0];
+        chrome.tabs.update(activeTab.id!, {url: previousMatch.previousUrl.url});
+      }
+      // if current_url does not exists in state
+      else{
+        sendResponse({success:false, message:"current_url is undefined in state - please add a topic first! or contact developer"})
+      }
+
+    })();
+
+    return true;
+  }
+
 
   
 
