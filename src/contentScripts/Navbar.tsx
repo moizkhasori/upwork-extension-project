@@ -13,7 +13,7 @@ navbar.style.left = "0";
 navbar.style.width = "100%";
 navbar.style.height = NAVBAR_HEIGHT;
 navbar.style.zIndex = "9999";
-navbar.style.borderBottom = "1px solid lightgray"
+// navbar.style.borderBottom = "1px solid lightgray"
 navbar.style.display = "none"
 
 document.body.appendChild(navbar);
@@ -226,7 +226,7 @@ const Navbar = () => {
       </div>
 
       <div className="navbar_combobox_div">
-        <label htmlFor="topic_combobox">Select a Topic:</label>
+        <label htmlFor="topic_combobox">Topic:</label>
 
         {lastTopic === null ? (
           <select id="topic_combobox">

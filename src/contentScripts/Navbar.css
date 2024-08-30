@@ -6,10 +6,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 7.5rem;
     width: 100%;
     color: #ffffff;
-    gap: 3rem;
+    gap: 2rem;
+    padding: 1rem 0;
 }
 
 
@@ -35,9 +35,9 @@
 
 
 .navbar_button{
-    padding: 1rem 2rem;
+    padding: 1rem;
     background-color: #111;
-    font-size: 2rem;
+    font-size: 1.2rem;
     font-weight: 600;
     outline: none;
     border: none;
@@ -63,13 +63,14 @@
 }
 
 .navbar_input_div input{
-    padding: 1rem 2rem;
+    padding: 1rem;
     font-size: 1.2rem;
     color: black;
     background-color: white;
     border: none;
     border-radius: 5px;
     outline: none;
+    max-width: 8rem;
     
 }
 
